@@ -290,7 +290,16 @@ namespace DynamicExpresso.UnitTest
 			Assert.AreEqual(10, val);
 		}
 
-		struct TypeWithImplicitConversion
+        [Test]
+        public void Multiply_need_convert()
+        {
+            var target = new Interpreter();
+
+            Assert.IsTrue(target.Eval<bool>("120 == ((UInt64)100 * 2 - 80)"));
+            
+        }
+
+        struct TypeWithImplicitConversion
 		{
 			private int _value;
 
@@ -405,7 +414,7 @@ namespace DynamicExpresso.UnitTest
 			Assert.IsTrue(target.Eval<bool>("(x + z) == \"13\"", new Parameter("z", z)));
 		}
 
-		class ClassWithOverloadedBinaryOperators
+        class ClassWithOverloadedBinaryOperators
 		{
 			private int _value;
 

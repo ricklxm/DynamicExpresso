@@ -307,7 +307,10 @@ namespace DynamicExpresso.Parsing
 
 				CheckAndPromoteOperands(typeof(ParseSignatures.IArithmeticSignatures), op.text, ref left, ref right, op.pos);
 
-				switch (op.id)
+                // by rick
+                NormalizeNumericType(ref left, ref right);
+
+                switch (op.id)
 				{
 					case TokenId.Asterisk:
 						left = Expression.Multiply(left, right);
@@ -323,8 +326,8 @@ namespace DynamicExpresso.Parsing
 			return left;
 		}
 
-		// +,-, ! unary operators
-		Expression ParseUnary()
+        // +,-, ! unary operators
+        Expression ParseUnary()
 		{
 			if (_token.id == TokenId.Minus || _token.id == TokenId.Exclamation || _token.id == TokenId.Plus)
 			{
@@ -1668,12 +1671,14 @@ namespace DynamicExpresso.Parsing
 
 		Expression GenerateEqual(Expression left, Expression right)
 		{
-			return Expression.Equal(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.Equal(left, right);
 		}
 
 		Expression GenerateNotEqual(Expression left, Expression right)
 		{
-			return Expression.NotEqual(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.NotEqual(left, right);
 		}
 
 		Expression GenerateGreaterThan(Expression left, Expression right)
@@ -1685,7 +1690,8 @@ namespace DynamicExpresso.Parsing
 						Expression.Constant(0)
 				);
 			}
-			return Expression.GreaterThan(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.GreaterThan(left, right);
 		}
 
 		Expression GenerateGreaterThanEqual(Expression left, Expression right)
@@ -1697,7 +1703,8 @@ namespace DynamicExpresso.Parsing
 						Expression.Constant(0)
 				);
 			}
-			return Expression.GreaterThanOrEqual(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.GreaterThanOrEqual(left, right);
 		}
 
 		Expression GenerateLessThan(Expression left, Expression right)
@@ -1709,7 +1716,8 @@ namespace DynamicExpresso.Parsing
 						Expression.Constant(0)
 				);
 			}
-			return Expression.LessThan(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.LessThan(left, right);
 		}
 
 		Expression GenerateLessThanEqual(Expression left, Expression right)
@@ -1721,7 +1729,8 @@ namespace DynamicExpresso.Parsing
 						Expression.Constant(0)
 				);
 			}
-			return Expression.LessThanOrEqual(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.LessThanOrEqual(left, right);
 		}
 
 		Expression GenerateAdd(Expression left, Expression right)
@@ -1730,12 +1739,14 @@ namespace DynamicExpresso.Parsing
 			{
 				return GenerateStaticMethodCall("Concat", left, right);
 			}
-			return Expression.Add(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.Add(left, right);
 		}
 
 		Expression GenerateSubtract(Expression left, Expression right)
 		{
-			return Expression.Subtract(left, right);
+            NormalizeNumericType(ref left, ref right);
+            return Expression.Subtract(left, right);
 		}
 
 		Expression GenerateStringConcat(Expression left, Expression right)
@@ -2046,5 +2057,25 @@ namespace DynamicExpresso.Parsing
 		{
 			return new ParseException(string.Format(format, args), pos);
 		}
-	}
+
+        // http://stackoverflow.com/questions/6884141/the-binary-operator-multiply-is-not-defined-for-the-types-system-int32-and-sy
+        private static void NormalizeNumericType(ref Expression left, ref Expression right)
+        {
+            if (!IsNumericType(left.Type) || !IsNumericType(right.Type))
+            {
+                return;
+            }
+
+            var leftTypeCode = Type.GetTypeCode(left.Type);
+            var rightTypeCode = Type.GetTypeCode(right.Type);
+
+            if (leftTypeCode == rightTypeCode)
+                return;
+
+            if (leftTypeCode > rightTypeCode)
+                right = Expression.Convert(right, left.Type);
+            else
+                left = Expression.Convert(left, right.Type);
+        }
+    }
 }
